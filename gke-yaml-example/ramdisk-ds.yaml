@@ -1,0 +1,41 @@
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: startup-ds
+spec:
+  selector:
+    matchLabels:
+      pre-load-model: "gcs"
+  template:
+    metadata:
+      labels:
+        pre-load-model: "gcs"
+    spec:
+      hostPID: true
+      volumes:
+      - name: ramdisk
+        hostPath:
+          path: /mnt/disks/ram
+      serviceAccountName: gcs-sa
+      containers:
+      - name: startup-ds
+        image: gcr.io/google-containers/startup-script:v2
+        imagePullPolicy: Always
+        securityContext:
+          privileged: true
+        env:
+        - name: STARTUP_SCRIPT
+          value: |
+            #!/bin/bash
+            sudo mkdir /mnt/disks/ram
+            sudo mount -t tmpfs -o size=2g tmpfs /mnt/disks/ram
+            echo 'tmpfs /mnt/disks/ram tmpfs nodev,nosuid,noexec,nodiratime,size=2g 0 0' | sudo tee -a /etc/fstab
+      - name: gcloud
+        image: gcr.io/google.com/cloudsdktool/google-cloud-cli:slim
+        args:
+        - /bin/sh
+        - -c
+        - gcloud storage cp gs://bucket/object /data;sleep infinity
+        volumeMounts:
+        - name: ramdisk
+          mountPath: /data
