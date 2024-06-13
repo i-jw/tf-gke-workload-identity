@@ -5,11 +5,11 @@ metadata:
 spec:
   selector:
     matchLabels:
-      pre-load-model: "gcs"
+      LABEL_KEY: "VALUE"
   template:
     metadata:
       labels:
-        pre-load-model: "gcs"
+        LABEL_KEY: "VALUE"
     spec:
       hostPID: true
       volumes:
